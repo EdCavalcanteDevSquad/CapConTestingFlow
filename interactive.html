@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CapCon — Interactive Low‑Fi Prototype</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: rgba(255,255,255,.06);
+      --border: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --muted2: rgba(255,255,255,.52);
+      --accent: #76e4ff;
+      --good: #62f6b2;
+      --warn: #ffcf5a;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --radius: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      background: radial-gradient(1200px 700px at 20% 0%, rgba(118,228,255,.14), transparent 60%),
+                  radial-gradient(900px 600px at 90% 20%, rgba(98,246,178,.10), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      background: rgba(11,18,32,.65);
+      border-bottom: 1px solid var(--border);
+    }
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px 18px;
+    }
+    .title {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      letter-spacing: .2px;
+    }
+    .meta {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .meta code { font-family: var(--mono); color: var(--text); }
+
+    main { padding: 24px 18px 48px; }
+
+    .panel {
+      max-width: 980px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: clip;
+    }
+    .panel-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .panel-head .left {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .panel-title {
+      font-weight: 650;
+      font-size: 13px;
+    }
+    .panel-sub {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .badge {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.03);
+      border-radius: 999px;
+      padding: 6px 8px;
+      white-space: nowrap;
+    }
+
+    .frame { padding: 16px; }
+
+    .callout {
+      border: 1px solid rgba(118,228,255,.20);
+      background: rgba(118,228,255,.06);
+      border-radius: 14px;
+      padding: 10px;
+      color: rgba(255,255,255,.85);
+      font-size: 12px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+    .callout strong { color: var(--accent); }
+
+    .hidden { display: none !important; }
+
+    .btnrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+      padding-top: 2px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      min-width: 130px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .btn.primary {
+      border-color: rgba(118,228,255,.35);
+      background: linear-gradient(180deg, rgba(118,228,255,.18), rgba(118,228,255,.06));
+    }
+    .btn.ghost {
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .proto-stack { max-width: 720px; margin: 12px auto 0; }
+    .proto-screen { display: none; }
+    .proto-screen.active { display: block; }
+
+    .phone {
+      background: rgba(0,0,0,.20);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 22px;
+      padding: 14px;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .screen {
+      background: rgba(255,255,255,.04);
+      border: 1px dashed rgba(255,255,255,.22);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .topbar {
+      padding: 12px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .topbar .left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.20);
+      background: linear-gradient(135deg, rgba(118,228,255,.25), rgba(98,246,178,.18));
+    }
+    .pill {
+      padding: 6px 10px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      background: rgba(255,255,255,.03);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .body { padding: 14px; display: grid; gap: 12px; }
+
+    .hero {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+    }
+    .h { font-weight: 750; letter-spacing: .2px; }
+    .p { color: var(--muted); font-size: 12px; line-height: 1.45; }
+
+    .input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.14);
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(255,255,255,.82);
+    }
+    .input .label {
+      font-family: var(--sans);
+      font-size: 12px;
+      color: var(--muted2);
+      min-width: 90px;
+    }
+    .kbd {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+    }
+
+    .list {
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .list .item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(255,255,255,.80);
+    }
+    .list .item:first-child { border-top: 0; }
+
+    .card {
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
+      border-radius: 14px;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .card .title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .grid2 { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 520px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+
+    .hint { font-size: 11px; color: var(--muted2); line-height: 1.4; }
+    .req { color: var(--warn); font-weight: 700; }
+
+    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .kpi {
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
+      border-radius: 14px;
+      padding: 10px;
+      display: grid;
+      gap: 4px;
+    }
+    .kpi .k { font-size: 11px; color: var(--muted); }
+    .kpi .v { font-family: var(--mono); font-size: 14px; }
+
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tab {
+      padding: 7px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.02);
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .tab.active {
+      border-color: rgba(118,228,255,.35);
+      color: rgba(255,255,255,.88);
+      background: rgba(118,228,255,.08);
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.16);
+      overflow: hidden;
+    }
+    .progress .fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(118,228,255,.10), rgba(118,228,255,.35), rgba(98,246,178,.20));
+      animation: progressFill 5s linear forwards;
+    }
+    @keyframes progressFill { from { width: 0%; } to { width: 100%; } }
+
+    .skeleton {
+      position: relative;
+      overflow: hidden;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
+    }
+    .skeleton::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
+      transform: translateX(-100%);
+      animation: shimmer 1.2s ease-in-out infinite;
+    }
+    @keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+    .toast {
+      position: sticky;
+      top: 10px;
+      z-index: 10;
+    }
+    @keyframes toastInOut {
+      0% { opacity: 0; transform: translateY(-8px); }
+      12% { opacity: 1; transform: translateY(0); }
+      82% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-4px); }
+    }
+
+    .footer-note {
+      max-width: 980px;
+      margin: 14px auto 0;
+      padding: 0 18px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .footer-note code { font-family: var(--mono); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="title">
+        <h1>CapCon — Interactive Low‑Fi Prototype</h1>
+        <div class="meta">
+          <span><a href="index.html">Overview screens</a></span>
+          <span>File: <code>interactive.html</code></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="panel" id="interactive-prototype">
+      <div class="panel-head">
+        <div class="left">
+          <div class="panel-title">Click through the updated flow</div>
+          <div class="panel-sub">Default: Full Underwriting. Post‑analysis choice: continue analyzing (Stripe) vs request loan review.</div>
+        </div>
+        <span class="badge" id="proto-step">Step 1 of 7</span>
+      </div>
+
+      <div class="frame">
+        <div class="callout">
+          <strong>Key updates</strong>: removed early “Choose Path”; re-framed email capture as operational; lender-grade system line above results; and post-analysis next-step choice.
+        </div>
+
+        <div class="btnrow" style="justify-content:flex-start; padding-top:0;">
+          <button class="btn" type="button" data-proto-reset>Reset</button>
+        </div>
+
+        <div class="proto-stack">
+          <div class="phone">
+            <!-- Step 1: Landing / Hero -->
+            <div class="proto-screen active" data-proto-screen="1">
+              <div class="screen">
+                <div class="topbar">
+                  <div class="left"><div class="logo"></div> Capital Connect</div>
+                  <div class="left"><span class="pill">Home</span><span class="pill">Plans</span></div>
+                  <div class="left"><span class="pill">Sign in</span><span class="pill">Sign up</span></div>
+                </div>
+                <div class="body">
+                  <div class="hero">
+                    <div class="h">Know Where Your Deal Stands Before Terms</div>
+                    <div class="p">Underwritten using real lender logic, not online estimates.</div>
+                  </div>
+
+                  <div class="btnrow" style="justify-content:flex-start;">
+                    <button class="btn primary" type="button" data-proto-go="2">Start Underwriting</button>
+                  </div>
+                  <div class="hint">No payment required • Terms follow underwriting review</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Address Search -->
+            <div class="proto-screen" data-proto-screen="2">
+              <div class="screen">
+                <div class="topbar">
+                  <div class="left">Modal</div>
+                  <div class="left"><span class="pill">Analyze Property</span></div>
+                  <div class="left"><span class="pill">Step 1/2</span></div>
+                </div>
+                <div class="body">
+                  <div class="p">Enter the property address to get verified data instantly</div>
+                  <div class="input"><span class="label">Search</span> 123 main st, miami fl…</div>
+                  <div class="list">
+                    <div class="item"><span>123 MAIN ST, MIAMI FL 331xx</span><button class="btn primary" type="button" style="min-width: 86px; padding: 8px 10px;" data-proto-select-address="123 Main St, Miami FL">Select</button></div>
+                    <div class="item"><span>125 MAIN ST, MIAMI FL 331xx</span><button class="btn" type="button" style="min-width: 86px; padding: 8px 10px;" data-proto-select-address="125 Main St, Miami FL">Select</button></div>
+                  </div>
+                  <div class="btnrow">
+                    <button class="btn ghost" type="button" data-proto-go="1">Cancel</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: Underwriting Form + Email -->
+            <div class="proto-screen" data-proto-screen="3">
+              <div class="screen">
+                <div class="topbar">
+                  <div class="left">Modal</div>
+                  <div class="left"><span class="pill">Full Underwriting</span></div>
+                  <div class="left"><span class="pill">Step 2/2</span></div>
+                </div>
+                <div class="body">
+                  <div class="card">
+                    <div class="title"><span>Property snapshot (auto‑filled)</span><span class="pill">Verify</span></div>
+                    <div class="p">Beds: 3 • Baths: 2 • Sqft: 1,850 • Year: 1978 • Type: SFR</div>
+                    <div class="p">City/State/ZIP: Miami, FL 331xx</div>
+                  </div>
+
+                  <div class="card">
+                    <div class="title"><span>Deal inputs (required)</span><span class="pill">Underwriting</span></div>
+                    <div class="grid2">
+                      <div class="input"><span class="label">Purchase<span class="req">*</span></span> $ 350,000</div>
+                      <div class="input"><span class="label">Rehab<span class="req">*</span></span> $ 45,000</div>
+                      <div class="input"><span class="label">Cash<span class="req">*</span></span> $ 80,000</div>
+                      <div class="input"><span class="label">Hold</span> 6 months</div>
+                    </div>
+                    <div class="hint">All other inputs remain available (loans, taxes, insurance, rent).</div>
+                  </div>
+
+                  <div class="card">
+                    <div class="title"><span>Email</span><span class="pill">Save</span></div>
+                    <div class="grid2">
+                      <div class="input"><span class="label">Email<span class="req">*</span></span> name@email.com</div>
+                      <div class="input"><span class="label">Phone</span> (optional)</div>
+                    </div>
+                    <div class="hint">We’ll save this analysis and email you a secure link. By continuing you agree to the Terms.</div>
+                  </div>
+
+                  <div class="btnrow">
+                    <button class="btn ghost" type="button" data-proto-go="2">Back</button>
+                    <button class="btn primary" type="button" data-proto-go="4">Start Underwriting</button>
+                  </div>
+                  <div class="hint">No payment required • Terms follow underwriting review</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Analyzing (5s) -->
+            <div class="proto-screen" data-proto-screen="4">
+              <div class="screen">
+                <div class="topbar">
+                  <div class="left">Modal</div>
+                  <div class="left"><span class="pill">Analyzing Property</span></div>
+                  <div class="left"><span class="pill">~5s</span></div>
+                </div>
+                <div class="body">
+                  <div class="hero">
+                    <div class="h">Analyzing <span id="proto-address-2">123 Main St</span>…</div>
+                    <div class="p">Pulling property data • Running underwriting • Calculating loan logic</div>
+                  </div>
+
+                  <div class="card">
+                    <div class="title"><span>Progress</span><span class="pill">loading</span></div>
+                    <div class="progress"><div class="fill" id="proto-analyze-progress"></div></div>
+                    <div class="hint" style="margin-top:8px;">Computing ARV confidence • scoring risk factors • generating terms logic</div>
+                  </div>
+
+                  <div class="kpis">
+                    <div class="kpi"><div class="k">Purchase Price</div><div class="skeleton" style="height: 18px;"></div></div>
+                    <div class="kpi"><div class="k">ROI</div><div class="skeleton" style="height: 18px;"></div></div>
+                    <div class="kpi"><div class="k">Equity Spread</div><div class="skeleton" style="height: 18px;"></div></div>
+                  </div>
+
+                  <div class="btnrow">
+                    <button class="btn ghost" type="button" data-proto-go="3">Back</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 5: Deal Analysis Results -->
+            <div class="proto-screen" data-proto-screen="5">
+              <div class="screen">
+                <div class="topbar">
+                  <div class="left">My Properties <span class="kbd">›</span> <span id="proto-address-3">123 Main St</span></div>
+                  <div class="left"></div>
+                  <div class="left"><span class="pill">Deal Analysis</span></div>
+                </div>
+
+                <div class="body">
+                  <div class="callout toast hidden" id="proto-access-toast">
+                    <strong>Access activated</strong> — you’ll be charged on day 3 unless you cancel before then.
+                  </div>
+
+                  <div class="callout">
+                    <strong>System</strong>: Uses the same underwriting logic applied internally before issuing loan terms.
+                  </div>
+
+                  <div class="card" id="proto-next-steps-preaccess">
+                    <div class="title"><span>What would you like to do next?</span><span class="pill">choice</span></div>
+                    <div class="p"><strong>Continue Analyzing Deals Instantly</strong> — start 3‑day access</div>
+                    <div class="p"><strong>Have Capital Connect Review This for Loan Terms</strong> — request loan review</div>
+                    <div class="btnrow" style="justify-content:flex-start;">
+                      <button class="btn primary" type="button" data-proto-go="6">Start 3‑Day Access (via Stripe)</button>
+                      <button class="btn" type="button" data-proto-go="7">Request Loan Review</button>
+                    </div>
+                    <div class="hint">Secure checkout by Stripe. Cancel anytime. You’ll be charged on day 3 unless you cancel before then.</div>
+                  </div>
+
+                  <div class="card hidden" id="proto-next-steps-access">
+                    <div class="title"><span>Access active</span><span class="pill">3 days</span></div>
+                    <div class="p">You can now analyze additional properties and re-run underwriting.</div>
+                    <div class="btnrow" style="justify-content:flex-start;">
+                      <button class="btn primary" type="button" data-proto-go="2">Analyze another property</button>
+                      <button class="btn" type="button" data-proto-go="7">Request Loan Review</button>
+                      <button class="btn" type="button" data-proto-action="re_analyze">Re‑Analyze</button>
+                    </div>
+                  </div>
+
+                  <div class="card">
+                    <div class="title"><span>Actions</span><span class="pill">top bar</span></div>
+                    <div class="p" style="display:flex; flex-wrap:wrap; gap:8px;">
+                      <span class="pill">Edit Inputs</span>
+                      <span class="pill">Export PDF</span>
+                      <button class="pill" type="button" data-proto-action="re_analyze">Re‑Analyze</button>
+                      <span class="pill">Term Sheet</span>
+                      <span class="pill">Financials Submit</span>
+                    </div>
+                    <div class="hint">If access is not active, Re‑Analyze will route to Stripe.</div>
+                  </div>
+
+                  <div class="kpis">
+                    <div class="kpi"><div class="k">Purchase Price</div><div class="v">$350,000</div></div>
+                    <div class="kpi"><div class="k">ROI</div><div class="v">18%</div></div>
+                    <div class="kpi"><div class="k">Equity Spread</div><div class="v">$42,000</div></div>
+                  </div>
+
+                  <div class="card">
+                    <div class="title"><span>Underwriter Verdict</span><span class="pill" style="border-color: rgba(98,246,178,.35)">Approved</span></div>
+                    <div class="p">Data Confidence: 82% • Key Risk Factors listed below</div>
+                  </div>
+
+                  <div class="tabs">
+                    <span class="tab active">Exit Strategies</span>
+                    <span class="tab">Comps & ARV</span>
+                    <span class="tab">Financials</span>
+                    <span class="tab">AI Advisory</span>
+                  </div>
+
+                  <div class="card">
+                    <div class="title"><span>Tab content</span><span class="pill">scroll</span></div>
+                    <div class="p">Full results visible on first deal.</div>
+                  </div>
+
+                  <div class="btnrow">
+                    <button class="btn" type="button" data-proto-reset>Reset</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 6: Stripe (redirect) -->
+            <div class="proto-screen" data-proto-screen="6">
+              <div class="screen">
+                <div class="topbar">
+                  <div class="left"><div class="logo"></div> Stripe Checkout</div>
+                  <div class="left"><span class="pill">Secure</span></div>
+                  <div class="left"><span class="pill">Redirect</span></div>
+                </div>
+
+                <div class="body">
+                  <div class="hero">
+                    <div class="h">Start 3‑day access</div>
+                    <div class="p">Continue analyzing deals instantly.</div>
+                  </div>
+
+                  <div class="card">
+                    <div class="title"><span>Billing</span><span class="pill">auto‑charge</span></div>
+                    <div class="p">You’ll be charged on day 3 unless you cancel before then.</div>
+                    <div class="hint">Secure checkout by Stripe. Cancel anytime.</div>
+                  </div>
+
+                  <div class="card">
+                    <div class="title"><span>Plan</span><span class="pill">placeholder</span></div>
+                    <div class="p"><span style="font-family: var(--mono);">$X / month</span> (after 3 days)</div>
+                  </div>
+
+                  <div class="card">
+                    <div class="title"><span>Payment</span><span class="pill">card</span></div>
+                    <div class="p" style="font-family: var(--mono);">[ Card details form ]</div>
+                    <div class="p" style="font-family: var(--mono);">[ Billing address ]</div>
+                  </div>
+
+                  <div class="btnrow">
+                    <button class="btn ghost" type="button" data-proto-go="5">Back</button>
+                    <button class="btn" type="button" data-proto-go="5">Cancel</button>
+                    <button class="btn primary" type="button" data-proto-stripe-success>Complete checkout</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 7: Request Loan Review Confirmation -->
+            <div class="proto-screen" data-proto-screen="7">
+              <div class="screen">
+                <div class="topbar">
+                  <div class="left">Capital Connect</div>
+                  <div class="left"><span class="pill">Loan Review</span></div>
+                  <div class="left"><span class="pill">Submitted</span></div>
+                </div>
+
+                <div class="body">
+                  <div class="hero">
+                    <div class="h">Loan review requested</div>
+                    <div class="p">We’ll review this underwriting and follow up with loan terms.</div>
+                  </div>
+
+                  <div class="card">
+                    <div class="title"><span>What happens next</span><span class="pill">ops</span></div>
+                    <div class="p">• Your analysis is saved</div>
+                    <div class="p">• Our team reviews internally</div>
+                    <div class="p">• Terms follow underwriting review</div>
+                  </div>
+
+                  <div class="btnrow">
+                    <button class="btn" type="button" data-proto-go="5">Back to my analysis</button>
+                    <button class="btn primary" type="button" data-proto-go="2">Analyze another property</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Open locally: <code>open product_management/lowfi_wireframes/jan_14_2026_flow/interactive.html</code>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const root = document.getElementById('interactive-prototype');
+      if (!root) return;
+
+      const stepLabel = document.getElementById('proto-step');
+      const addressEl2 = document.getElementById('proto-address-2');
+      const addressEl3 = document.getElementById('proto-address-3');
+
+      const toast = document.getElementById('proto-access-toast');
+      const preAccessCard = document.getElementById('proto-next-steps-preaccess');
+      const accessCard = document.getElementById('proto-next-steps-access');
+
+      let step = 1;
+      let selectedAddress = '123 Main St, Miami FL';
+      let analyzingTimer = null;
+      let toastTimer = null;
+
+      let accessActive = false;
+      let showAccessActivatedToast = false;
+
+      function setStep(nextStep) {
+        step = Math.max(1, Math.min(7, nextStep));
+
+        const screens = root.querySelectorAll('[data-proto-screen]');
+        screens.forEach((el) => {
+          const isActive = String(step) === el.getAttribute('data-proto-screen');
+          el.classList.toggle('active', isActive);
+        });
+
+        if (stepLabel) stepLabel.textContent = `Step ${step} of 7`;
+        if (addressEl2) addressEl2.textContent = selectedAddress.split(',')[0] || selectedAddress;
+        if (addressEl3) addressEl3.textContent = selectedAddress.split(',')[0] || selectedAddress;
+
+        if (analyzingTimer) {
+          clearTimeout(analyzingTimer);
+          analyzingTimer = null;
+        }
+        if (toastTimer) {
+          clearTimeout(toastTimer);
+          toastTimer = null;
+        }
+
+        if (step == 4) {
+          const progressFill = document.getElementById('proto-analyze-progress');
+          if (progressFill) {
+            progressFill.style.animation = 'none';
+            void progressFill.offsetHeight;
+            progressFill.style.animation = 'progressFill 5s linear forwards';
+          }
+          analyzingTimer = setTimeout(() => setStep(5), 5000);
+        }
+
+        if (step == 5) {
+          if (preAccessCard && accessCard) {
+            preAccessCard.classList.toggle('hidden', accessActive);
+            accessCard.classList.toggle('hidden', !accessActive);
+          }
+
+          if (toast) {
+            toast.classList.add('hidden');
+
+            if (showAccessActivatedToast) {
+              toast.classList.remove('hidden');
+              toast.style.animation = 'none';
+              void toast.offsetHeight;
+              toast.style.animation = 'toastInOut 4s ease forwards';
+              toastTimer = setTimeout(() => toast.classList.add('hidden'), 4000);
+              showAccessActivatedToast = false;
+            }
+          }
+        }
+      }
+
+      function reset() {
+        selectedAddress = '123 Main St, Miami FL';
+        accessActive = false;
+        showAccessActivatedToast = false;
+        setStep(1);
+      }
+
+      setStep(1);
+
+      root.addEventListener('click', (e) => {
+        const resetBtn = e.target.closest('[data-proto-reset]');
+        if (resetBtn) {
+          reset();
+          return;
+        }
+
+        const stripeSuccess = e.target.closest('[data-proto-stripe-success]');
+        if (stripeSuccess) {
+          accessActive = true;
+          showAccessActivatedToast = true;
+          setStep(5);
+          return;
+        }
+
+        const selectAddress = e.target.closest('[data-proto-select-address]');
+        if (selectAddress) {
+          selectedAddress = selectAddress.getAttribute('data-proto-select-address') || selectedAddress;
+          setStep(3);
+          return;
+        }
+
+        const action = e.target.closest('[data-proto-action]');
+        if (action) {
+          const actionType = action.getAttribute('data-proto-action');
+          if (actionType === 're_analyze') {
+            if (!accessActive) {
+              setStep(6);
+              return;
+            }
+            setStep(4);
+            return;
+          }
+        }
+
+        const go = e.target.closest('[data-proto-go]');
+        if (go) {
+          const next = Number(go.getAttribute('data-proto-go'));
+          setStep(next);
+        }
+      });
+
+      root.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const go = e.target.closest('[data-proto-go]');
+        if (go) {
+          const next = Number(go.getAttribute('data-proto-go'));
+          setStep(next);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
